@@ -1,0 +1,25 @@
+module RegFile(addr, data_in, read_write, clk, rst, data_out);
+
+	input [31:0] addr;                      // 32 bit addr input
+	input [7:0] data_in;                    // 8 bit data in
+    input read_write;                       // ReWr enable, 1 is write 0 is read
+    input clk, rst;                              // clock
+	output reg [7:0] data_out;              // 8 bit output
+    reg [7:0] memory [0:2097151];           // memory array w/ 2^32 8 bit locations
+    int unsigned i;
+    
+	always @(posedge clk) begin
+        if (rst) begin
+            for (i=0; i<=2097151; i=i+1) begin
+                memory[i] <= 8'b0;
+            end
+            
+        end else begin
+            if (read_write) begin               // Write
+                memory[addr] <= data_in;
+            end else begin                      // Read
+                data_out <= memory[addr];
+            end
+        end
+	end
+endmodule
