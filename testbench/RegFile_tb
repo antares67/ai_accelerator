@@ -1,0 +1,41 @@
+module RegFile_tb();
+
+    reg [31:0] addr;
+	reg [7:0] data_in;                // 8 bit data in
+    reg read_write;                   // ReWr enable, 1 is write 0 is read
+    reg clk, rst;                     // clock
+	wire [7:0] data_out;              // 8 bit output
+
+    RegFile dut (addr, data_in, read_write, clk, rst, data_out);
+    
+    int testLimit = 10;
+    int i = 0;
+    
+    initial begin
+    
+        addr = 0;
+        data_in = 0;
+        read_write = 1;
+        clk = 0;
+        rst = 1;
+        #20 rst = 0;
+    
+    end
+    
+    always begin
+    
+        #10 clk = 1;
+        #10 clk = 0;
+        
+        if (i < testLimit) begin
+            data_in = data_in + 1;
+            addr = addr + 1;
+        end else if (i < testLimit * 2) begin
+            read_write = 0;
+            addr = addr - 1;
+        end else $stop;
+        
+        i = i + 1;
+    end
+
+endmodule
