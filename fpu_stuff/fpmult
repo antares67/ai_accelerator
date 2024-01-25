@@ -1,0 +1,316 @@
+module CoreFPU_C0_CoreFPU_C0_0_fpmult( AIN, BIN, CLK, NRST, DI_VALID,DO_VALID, POUT, NaN, overflow, INF );
+
+parameter AWIDTH     = 32;
+
+
+input   [AWIDTH-1 : 0] AIN;
+input   [AWIDTH-1 : 0] BIN;
+input   CLK;
+input   NRST;
+input                    DI_VALID;
+output                   DO_VALID;
+output reg [AWIDTH-1 : 0] POUT;
+output reg                NaN;
+output reg                overflow;
+output reg                INF;
+
+reg                      A_sbit;
+reg   signed [7:0]       A_exp;
+reg          [22:0]      A_mant;
+reg                      B_sbit;
+reg   signed [7:0]       B_exp;
+reg          [22:0]      B_mant;
+
+// Pipe
+reg                      A_sbit1;
+reg   signed [7:0]       A_exp1;
+reg          [22:0]      A_mant1;
+reg                      B_sbit1;
+reg   signed [7:0]       B_exp1;
+reg          [22:0]      B_mant1;
+
+reg                      A_sbit2;
+reg   signed [7:0]       A_exp2;
+reg          [22:0]      A_mant2;
+reg                      B_sbit2;
+reg   signed [7:0]       B_exp2;
+reg          [22:0]      B_mant2;
+
+reg                      A_sbit3;
+reg   signed [7:0]       A_exp3;
+reg          [22:0]      A_mant3;
+reg                      B_sbit3;
+reg   signed [7:0]       B_exp3;
+reg          [22:0]      B_mant3;
+
+reg                      A_sbit4;
+reg   signed [7:0]       A_exp4;
+reg          [22:0]      A_mant4;
+reg                      B_sbit4;
+reg   signed [7:0]       B_exp4;
+reg          [22:0]      B_mant4;
+
+reg                      A_sbit5;
+reg   signed [7:0]       A_exp5;
+reg          [22:0]      A_mant5;
+reg                      B_sbit5;
+reg   signed [7:0]       B_exp5;
+reg          [22:0]      B_mant5;
+
+reg                      A_sbit6;
+reg   signed [7:0]       A_exp6;
+reg          [22:0]      A_mant6;
+reg                      B_sbit6;
+reg   signed [7:0]       B_exp6;
+reg          [22:0]      B_mant6;
+
+reg   [47:0]              p_mant;
+wire [48:0] mul_out;
+wire   signed [8:0]       p_exp;
+wire                      p_sign;
+
+
+wire   azero;
+wire   bzero;
+
+wire   [AWIDTH-1:0]       pout_s;
+
+reg                       DO_VALID;
+reg                       di_valid_r1;
+reg                       di_valid_r2;
+reg                       di_valid_r3;
+reg                       di_valid_r4;
+reg                       di_valid_r5;
+reg                       di_valid_r6;
+reg                       di_valid_r7;
+
+
+wire signed [8:0] p_exp2;
+wire [23:0] p_mant_round;
+wire [23:0] p_mant_round1;
+
+wire gaurd_bit;
+wire round_bit;
+wire round_bit2;
+
+always @(posedge CLK or negedge NRST)
+begin
+  if(NRST == 1'b0) 
+  begin
+    A_sbit <= 1'b0;
+    A_exp  <= 8'b0;
+    A_mant <= 23'b0;
+    A_sbit1 <= 1'b0;
+    A_exp1  <= 8'b0;
+    A_mant1 <= 23'b0;
+    A_sbit2 <= 1'b0;
+    A_exp2  <= 8'b0;
+    A_mant2 <= 23'b0;
+    A_sbit3 <= 1'b0;
+    A_exp3  <= 8'b0;
+    A_mant3 <= 23'b0;
+    A_sbit4 <= 1'b0;
+    A_exp4  <= 8'b0;
+    A_mant4 <= 23'b0;
+    A_sbit5 <= 1'b0;
+    A_exp5  <= 8'b0;
+    A_mant5 <= 23'b0;
+    A_sbit6 <= 1'b0;
+    A_exp6  <= 8'b0;
+    A_mant6 <= 23'b0;
+  end
+  else begin
+      A_sbit <= AIN[AWIDTH-1];
+      A_exp  <= AIN[30:23];
+      A_mant <= AIN[22:0];
+      A_sbit1 <= A_sbit;
+      A_exp1  <= A_exp;
+      A_mant1 <= A_mant;
+      A_sbit2 <= A_sbit1;
+      A_exp2  <= A_exp1;
+      A_mant2 <= A_mant1;
+      A_sbit3 <= A_sbit2;
+      A_exp3  <= A_exp2;
+      A_mant3 <= A_mant2;
+      A_sbit4 <= A_sbit3;
+      A_exp4  <= A_exp3;
+      A_mant4 <= A_mant3;
+      A_sbit5 <= A_sbit4;
+      A_exp5  <= A_exp4;
+      A_mant5 <= A_mant4;
+      A_sbit6 <= A_sbit5;
+      A_exp6  <= A_exp5;
+      A_mant6 <= A_mant5;
+    end
+end
+
+always @(posedge CLK or negedge NRST)
+begin
+  if(NRST == 1'b0) 
+  begin
+    B_sbit <= 1'b0;
+    B_exp  <= 8'b0;
+    B_mant <= 23'b0;
+    B_sbit1 <= 1'b0;
+    B_exp1  <= 8'b0;
+    B_mant1 <= 23'b0;
+    B_sbit2 <= 1'b0;
+    B_exp2  <= 8'b0;
+    B_mant2 <= 23'b0;
+    B_sbit3 <= 1'b0;
+    B_exp3  <= 8'b0;
+    B_mant3 <= 23'b0;
+    B_sbit4 <= 1'b0;
+    B_exp4  <= 8'b0;
+    B_mant4 <= 23'b0;
+    B_sbit5 <= 1'b0;
+    B_exp5  <= 8'b0;
+    B_mant5 <= 23'b0;
+    B_sbit6 <= 1'b0;
+    B_exp6  <= 8'b0;
+    B_mant6 <= 23'b0;
+  end
+  else begin
+      B_sbit <= BIN[AWIDTH-1];
+      B_exp  <= BIN[30:23];
+      B_mant <= BIN[22:0];
+      B_sbit1 <= B_sbit;
+      B_exp1  <= B_exp;
+      B_mant1 <= B_mant;
+      B_sbit2 <= B_sbit1;
+      B_exp2  <= B_exp1;
+      B_mant2 <= B_mant1;
+      B_sbit3 <= B_sbit2;
+      B_exp3  <= B_exp2;
+      B_mant3 <= B_mant2;
+      B_sbit4 <= B_sbit3;
+      B_exp4  <= B_exp3;
+      B_mant4 <= B_mant3;
+      B_sbit5 <= B_sbit4;
+      B_exp5  <= B_exp4;
+      B_mant5 <= B_mant4;
+      B_sbit6 <= B_sbit5;
+      B_exp6  <= B_exp5;
+      B_mant6 <= B_mant5;
+  end
+end
+
+
+always @(posedge CLK or negedge NRST)
+begin
+  if(NRST == 1'b0) begin
+    di_valid_r1   <= 1'b0;
+    di_valid_r2   <= 1'b0;
+    di_valid_r3   <= 1'b0;
+    di_valid_r4   <= 1'b0;
+    di_valid_r5   <= 1'b0;
+    di_valid_r6   <= 1'b0;
+    di_valid_r7   <= 1'b0;
+    DO_VALID      <= 1'b0;
+   end
+  else begin
+    di_valid_r1   <= DI_VALID;
+    di_valid_r2   <= di_valid_r1;
+    di_valid_r3   <= di_valid_r2;
+    di_valid_r4   <= di_valid_r3;
+    di_valid_r5   <= di_valid_r4;
+    di_valid_r6   <= di_valid_r5;
+    di_valid_r7   <= di_valid_r6;
+    DO_VALID      <= di_valid_r7;
+end
+end
+
+always @(posedge CLK or negedge NRST)
+begin
+  if(NRST == 1'b0) begin
+    POUT <= 'h0;
+    NaN <= 1'b0;
+    overflow <= 1'b0;
+	INF <= 1'b0;
+  end
+    // If A or B is Infinity return infinity
+  else if ( ((A_exp6 == 8'hFF) && (A_mant6[22:0] == 'h0)) || ((B_exp6 == 8'hFF) && (B_mant6[22:0] == 'h0)) )begin
+    POUT[31] <= A_sbit6 ^ B_sbit6;
+    POUT[30:23] <= 8'hFF;
+    POUT[22:0] <= 0;
+    NaN <= 1'b0;
+    INF <= 1'b1;
+    overflow <= 1'b0;
+  end
+    // If A is NaN or B is NaN return NaN
+  else if ( (A_exp6 == 8'hFF && A_mant6[22:0] != 'h0 ) || (B_exp6 == 8'hFF && B_mant6[22:0] != 'h0) ) begin
+    POUT <= 32'hFFFFFFFF;
+    NaN <= 1'b1;
+    INF <= 1'b0;
+    overflow <= 1'b0;
+  end
+    // Report overflow
+  else if ( p_exp2 > 'd254 ) begin
+    POUT[31] <= A_sbit6 ^ B_sbit6;
+    POUT[30:23] <= 8'hFF;
+    POUT[22:0] <= 0;
+    overflow <= 1'b1;
+    NaN <= 1'b0;
+    INF <= 1'b0;
+  end
+  else begin
+    POUT <= pout_s;
+    NaN <= 1'b0;
+    overflow <= 1'b0;
+    INF <= 1'b0;
+  end
+end
+
+
+CoreFPU_C0_CoreFPU_C0_0_Mul_MACC_pipe mul_24bit(
+                                // Inputs
+                                .AIN            ({1'b1,A_mant}),
+                                .BIN            ({1'b1,B_mant}),
+                                .CLK            (CLK),
+                                .RESETN_MACC    (NRST),
+                                .Bypass_inputs  (1'b0),
+                                // Outputs
+                                .P_out          (mul_out)
+                            );
+
+
+
+always @(posedge CLK or negedge NRST)
+begin
+  if(NRST == 1'b0) 
+    p_mant <= 48'b0;
+  else     
+        p_mant <= mul_out[47:0];
+end
+
+
+assign azero = ({A_exp6,A_mant6} == 31'h00000000) ?  1'b1 :  1'b0;
+
+assign bzero = ({B_exp6,B_mant6} == 31'h00000000) ?  1'b1 :  1'b0;
+
+
+assign p_mant_round = (p_mant[47] == 1'b0) ? p_mant[45:23] : p_mant[46:24];
+assign gaurd_bit = (p_mant[47] == 1'b0) ? p_mant[22] : p_mant[23];
+assign round_bit = (p_mant[47] == 1'b0) ? p_mant[21] : p_mant[22];
+assign round_bit2 = (p_mant[47] == 1'b0) ? (p_mant[20:0] != 0) : (p_mant[21:0] != 0);
+
+assign p_mant_round1 = (azero == 1'b1 || bzero == 1'b1) ? 24'h000000 : (gaurd_bit && (round_bit | round_bit2 | p_mant_round[0])) ? (p_mant_round + 1) : p_mant_round;
+
+
+assign p_exp   =  (azero == 1'b1 || bzero == 1'b1) ? 9'h000 : (p_mant[47] == 1'b0) ? ({A_exp6[7],A_exp6[7:0]-'d127} + {B_exp6[7],B_exp6[7:0]-'d127} + 9'b001111111 ) 
+                                                                                : ({A_exp6[7],A_exp6[7:0]-'d127} + {B_exp6[7],B_exp6[7:0]-'d127} + 9'b010000000); 
+
+
+assign p_exp2 = (p_mant_round1 == 24'hffffff) ? (p_exp + 1) : p_exp;
+
+assign p_sign  =  ((A_sbit6 == 1'b0 && B_sbit6 == 1'b0) || (A_sbit6 == 1'b1 && B_sbit6 == 1'b1))  ?  1'b0 :  1'b1;
+
+assign pout_s = {p_sign, p_exp2[7:0], p_mant_round1[22:0]};
+
+
+endmodule
+
+
+
+
+
